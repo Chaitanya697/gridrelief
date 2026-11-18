@@ -1,0 +1,67 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  center-service:
+    build: ./center-service
+    ports:
+      - "8001:8001"
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  request-service:
+    build: ./request-service
+    ports:
+      - "8002:8002"
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  allocation-service:
+    build: ./allocation-service
+    ports:
+      - "8003:8003"
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      CENTER_SERVICE_URL: http://center-service:8001
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      center-service:
+        condition: service_started
+    restart: unless-stopped
+
+  dashboard:
+    build: ./dashboard
+    ports:
+      - "8080:8080"
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      CENTER_URL: http://center-service:8001
+      REQUEST_URL: http://request-service:8002
+      ALLOCATION_URL: http://allocation-service:8003
+    volumes:
+      # Optional: lets the dashboard's Stop/Start/Reset buttons control containers.
+      # Delete this line to disable the buttons (the dashboard still works read-only).
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped

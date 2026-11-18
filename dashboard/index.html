@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GridRelief - Network Console</title>
+<style>
+:root{--bg:#0b1220;--panel:#111a2e;--panel2:#16213b;--line:#22304f;--text:#e6ecf8;--muted:#8c9ab8;
+--teal:#2dd4bf;--amber:#fbbf24;--red:#f87171;--green:#4ade80;--blue:#60a5fa;--violet:#a78bfa}
+*{box-sizing:border-box}
+body{margin:0;color:var(--text);font:14px/1.45 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+background:radial-gradient(1100px 520px at 8% -10%,#18305a 0,transparent 60%),var(--bg);min-height:100vh}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 24px;border-bottom:1px solid var(--line)}
+.brand{display:flex;gap:12px;align-items:center}
+.logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--teal),var(--blue));color:#06202a;font-weight:800;display:grid;place-items:center;font-size:20px}
+h1{margin:0;font-size:19px;letter-spacing:.3px} header p{margin:0;color:var(--muted);font-size:12px}
+.pills{display:flex;gap:8px;flex-wrap:wrap}
+.pill{display:flex;align-items:center;gap:7px;padding:5px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line);font-size:12px}
+.pill em{font-style:normal;font-weight:700;font-size:10px;letter-spacing:.6px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--muted)}
+.pill.up .dot{background:var(--green);box-shadow:0 0 8px var(--green)} .pill.up em{color:var(--green)}
+.pill.down .dot{background:var(--red);box-shadow:0 0 8px var(--red)} .pill.down em{color:var(--red)}
+button{font:inherit;cursor:pointer;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 12px}
+button:hover{border-color:var(--teal)} button:disabled{opacity:.5;cursor:default}
+button.primary{background:linear-gradient(135deg,var(--teal),#22b8d4);color:#04222b;border:0;font-weight:700}
+button.mini{padding:2px 8px;font-size:11px;border-radius:6px} button.ghost{background:transparent}
+main{padding:18px 24px;max-width:1500px;margin:0 auto}
+.card{background:linear-gradient(180deg,var(--panel),#0f1830);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:16px}
+.card h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);display:flex;gap:8px;align-items:baseline}
+.card h2 small{font-size:11px;text-transform:none;letter-spacing:0;color:var(--teal)}
+.demo-head{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:10px}
+#caption{color:var(--amber);flex:1;min-width:260px}
+.steps{display:flex;gap:10px;flex-wrap:wrap}
+.step{display:flex;align-items:center;gap:9px;padding:9px 14px;font-weight:600}
+.step i{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--line);font-size:12px}
+.step.done i{background:var(--green);color:#052b12}
+.grid{display:grid;grid-template-columns:320px minmax(0,1fr) 340px;gap:16px;align-items:start}
+@media(max-width:1150px){.grid{grid-template-columns:1fr}}
+.flow{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding-bottom:4px}
+.node{min-width:150px;flex:1;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);text-align:center}
+.node b{display:block;font-size:12px;word-break:break-all} .node span{display:block;font-size:11px;color:var(--muted);margin-top:3px}
+.node.up{border-color:#1f6b52} .node.up b{color:var(--green)}
+.node.down{border-color:#7f2d2d;background:#2a1618} .node.down b{color:var(--red)}
+.node.warn{border-color:#8a6a12;background:#2a2410} .node.warn b{color:var(--amber)}
+.arrow{width:34px;flex:none;align-self:center;height:2px;background:repeating-linear-gradient(90deg,var(--muted) 0 6px,transparent 6px 12px);position:relative}
+.arrow::after{content:"";position:absolute;right:-1px;top:-4px;border:5px solid transparent;border-left:8px solid var(--muted);border-right:0}
+.arrow.flowing{background:repeating-linear-gradient(90deg,var(--teal) 0 6px,transparent 6px 12px);animation:dash 0.6s linear infinite}
+.arrow.flowing::after{border-left-color:var(--teal)}
+@keyframes dash{to{background-position:12px 0}}
+.envs{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:8px;min-height:18px}
+.envs i{width:22px;height:15px;border-radius:3px;background:var(--amber);position:relative;animation:pop .35s ease-out}
+.envs i::after{content:"";position:absolute;left:0;right:0;top:0;height:0;border:11px solid transparent;border-top:8px solid #b27a07;border-bottom:0}
+.envs b{font-size:11px;color:var(--amber)}
+@keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+.note{margin:10px 2px 0;color:var(--muted);font-size:12.5px}
+.flash{animation:flash 1.2s ease-out 2}
+@keyframes flash{0%,100%{box-shadow:none}50%{box-shadow:0 0 0 3px var(--amber)}}
+table{width:100%;border-collapse:collapse} th{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:9px 8px;border-bottom:1px solid #1a2745;vertical-align:middle} tr:last-child td{border-bottom:0}
+.sub{color:var(--muted);font-size:11.5px}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid transparent}
+.c-critical{background:#3b1d1d;color:var(--red)} .c-high{background:#3a2c12;color:var(--amber)} .c-normal{background:#14304a;color:var(--blue)}
+.s-queued{background:#3a2c12;color:var(--amber);animation:blink 1.4s infinite} .s-pending{background:#14304a;color:var(--blue)}
+.s-approved{background:#12351f;color:var(--green)} .s-partial{background:#10343a;color:var(--teal)} .s-rejected{background:#3b1d1d;color:var(--red)}
+@keyframes blink{50%{opacity:.55}}
+.bar{height:7px;border-radius:5px;background:var(--line);overflow:hidden;width:90px;margin-top:4px}
+.bar>div{height:100%;background:linear-gradient(90deg,var(--violet),var(--teal))}
+.acts{display:flex;gap:5px;flex-wrap:wrap}
+.acts button{padding:3px 9px;font-size:12px} .ok{color:var(--green)} .part{color:var(--teal)} .no{color:var(--red)}
+.center{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;background:var(--panel2)}
+.center h3{margin:0;font-size:14px} .center .sub{margin-bottom:6px}
+.seg{display:flex;height:10px;border-radius:6px;overflow:hidden;background:#0b1428;margin:6px 0 4px}
+.seg .free{background:var(--teal)} .seg .res{background:repeating-linear-gradient(45deg,var(--amber) 0 5px,#b27a07 5px 10px)} .seg .priv{background:#2a3858}
+.legend{font-size:11.5px;color:var(--muted)} .legend b{color:var(--text)}
+details{margin-top:6px} summary{cursor:pointer;color:var(--teal);font-size:12.5px}
+form.stack{display:grid;gap:6px;margin-top:8px} input,select{font:inherit;color:var(--text);background:#0b1428;border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0}
+form.inline{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px} form.inline input[type=number]{width:90px} form.inline input[type=text]{width:130px}
+.ev{display:grid;grid-template-columns:62px 1fr;gap:8px;padding:8px 0;border-bottom:1px solid #1a2745;font-size:12.5px}
+.ev:last-child{border-bottom:0} .ev time{color:var(--muted);font-size:11.5px;padding-top:2px}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:5px;margin-right:6px;background:#1c2a4a;color:var(--blue)}
+.t-request{background:#3a2c12;color:var(--amber)} .t-allocation{background:#241d4a;color:var(--violet)} .t-inventory{background:#10343a;color:var(--teal)}
+.t-approved{background:#12351f;color:var(--green)} .t-rejected{background:#3b1d1d;color:var(--red)}
+#events{max-height:640px;overflow:auto} .empty{color:var(--muted);padding:10px 0;font-size:12.5px}
+footer{color:var(--muted);font-size:12px;padding:0 24px 28px;max-width:1500px;margin:0 auto;line-height:1.7} footer a{color:var(--teal)}
+#offline{position:fixed;top:0;left:0;right:0;background:var(--red);color:#2a0606;text-align:center;font-weight:700;padding:6px;z-index:9}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#0b1428;border:1px solid var(--teal);padding:10px 18px;border-radius:10px;opacity:0;transition:.25s;z-index:10;max-width:80vw}
+#toast.show{opacity:1} #toast.bad{border-color:var(--red);color:var(--red)}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--teal);border-radius:14px;padding:18px 20px;min-width:320px}
+dialog::backdrop{background:rgba(0,0,0,.55)} dialog h3{margin:0 0 10px} dialog input{width:100%;margin:6px 0 14px} dialog menu{display:flex;gap:8px;justify-content:flex-end;padding:0;margin:0}
+</style>
+</head>
+<body>
+<div id="offline" hidden>Dashboard cannot reach its own server. Is the dashboard container running?</div>
+<header>
+  <div class="brand"><div class="logo">G</div><div><h1>GridRelief</h1><p>Federated disaster-relief coordination &middot; live network console</p></div></div>
+  <div class="pills" id="pills"></div>
+</header>
+<main>
+  <section class="card">
+    <div class="demo-head"><b>Guided failure demo</b><span id="caption"></span><button class="ghost" id="resetBtn">Reset demo</button></div>
+    <div class="steps">
+      <button class="step" data-step="1"><i>1</i>Stop allocation service</button>
+      <button class="step" data-step="2"><i>2</i>Send competing requests</button>
+      <button class="step" data-step="3"><i>3</i>Show retained events</button>
+      <button class="step" data-step="4"><i>4</i>Restart &amp; recover</button>
+    </div>
+  </section>
+
+  <section class="card" id="pipe">
+    <h2>Event pipeline <small>RabbitMQ, live</small></h2>
+    <div class="flow">
+      <div class="node" id="n-req"><b>request-service</b><span>publishes request.created</span></div><div class="arrow" id="a1"></div>
+      <div class="node" id="n-ex"><b>gridrelief.events</b><span>topic exchange</span></div><div class="arrow" id="a2"></div>
+      <div class="node" id="n-q"><b>allocation.request-created</b><span id="qtext">durable queue</span><div class="envs" id="envs"></div></div><div class="arrow" id="a3"></div>
+      <div class="node" id="n-al"><b>allocation-service</b><span id="atext">consumer</span></div>
+    </div>
+    <p class="note" id="pipeNote"></p>
+  </section>
+
+  <div class="grid">
+    <section>
+      <div class="card"><h2>Relief centers <small>each owns its inventory</small></h2>
+        <div id="centers"></div>
+        <details><summary>Manage centers (centers are data, not code)</summary>
+          <form class="stack" id="centerForm"><input id="cName" placeholder="New center name" required><input id="cId" placeholder="id (optional, e.g. center-d)"><button class="primary">Register center</button></form>
+          <form class="stack" id="stockForm"><select id="sCenter"></select><input id="sItem" value="food_packets" required>
+            <input id="sQty" type="number" min="0" placeholder="Total stock" required><input id="sShare" type="number" min="0" placeholder="Shareable quantity" required><button class="primary">Set inventory</button></form>
+        </details>
+      </div>
+    </section>
+
+    <section>
+      <div class="card"><h2>Requests &amp; allocation <small>priority-ranked, supplier decides</small></h2>
+        <form class="inline" id="reqForm"><select id="rqCenter"></select><input type="text" id="rqItem" value="food_packets" required>
+          <input type="number" id="rqQty" min="1" value="100" required><select id="rqUrg"><option>critical</option><option>high</option><option selected>normal</option></select>
+          <button class="primary">Submit request</button></form>
+        <table><thead><tr><th>Request</th><th>Need</th><th>Priority</th><th>Recommendation</th><th>Status</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+      </div>
+    </section>
+
+    <section>
+      <div class="card"><h2>Live event stream <small>everything on the broker</small></h2><div id="events"></div></div>
+    </section>
+  </div>
+</main>
+<footer>
+  Priority score = urgency (critical 3, high 2, normal 1) &times; 10 + hours waiting &times; 0.5 + affected people &divide; 100 &middot; same rule for every center.<br>
+  Prototype: data is in memory; &ldquo;reserved&rdquo; stock is derived from approved recommendations (real stock deduction is a TODO).<br>
+  Under the hood: <a href="http://localhost:8001/docs" target="_blank">center API</a> &middot; <a href="http://localhost:8002/docs" target="_blank">request API</a> &middot; <a href="http://localhost:8003/docs" target="_blank">allocation API</a> &middot; <a href="http://localhost:15672" target="_blank">RabbitMQ UI</a> (guest/guest)
+</footer>
+<div id="toast"></div>
+<dialog id="dlg"><form method="dialog"><h3 id="dlgTitle"></h3><label id="dlgLabel" class="sub"></label><input id="dlgInput" required>
+  <menu><button value="cancel" formnovalidate>Cancel</button><button value="ok" class="primary">Confirm</button></menu></form></dialog>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let S=null, doneSteps=new Set();
+const last={};
+function setHTML(sel,html){ if(last[sel]!==html){ last[sel]=html; $(sel).innerHTML=html; } }
+function toast(msg,bad){ const t=$('#toast'); t.textContent=msg; t.className='show'+(bad?' bad':''); clearTimeout(t._h); t._h=setTimeout(()=>t.className='',3200); }
+async function api(method,url,body){
+  const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+  let j={}; try{ j=await r.json(); }catch(e){}
+  if(!r.ok){ const d=j.detail; throw new Error(Array.isArray(d)?d.map(x=>x.msg).join('; '):(d||r.statusText)); }
+  return j;
+}
+const cname=id=>{ const c=(S.centers||[]).find(c=>c.center_id===id); return c?c.name:id; };
+const time=ts=>{ const d=new Date(ts); return isNaN(d)?'':d.toLocaleTimeString([], {hour12:false}); };
+
+function render(){
+  const sv=S.services, q=S.queue, ready=q&&q.ready!=null?q.ready:0, cons=q&&q.consumers!=null?q.consumers:0;
+  // service pills
+  const defs=[['rabbitmq','RabbitMQ'],['center','center-service'],['request','request-service'],['allocation','allocation-service']];
+  setHTML('#pills',defs.map(([k,l])=>{ const up=sv[k];
+    const ctl=(S.can_control&&k!=='rabbitmq')?`<button class="mini" data-svc="${k}" data-act="${up?'stop':'start'}">${up?'Stop':'Start'}</button>`:'';
+    return `<div class="pill ${up?'up':'down'}"><span class="dot"></span>${l}<em>${up?'UP':'DOWN'}</em>${ctl}</div>`; }).join(''));
+  // pipeline
+  const flowing=sv.allocation&&cons>0;
+  $('#n-req').className='node '+(sv.request?'up':'down');
+  $('#n-ex').className='node '+(sv.rabbitmq?'up':'down');
+  $('#n-q').className='node '+(!sv.rabbitmq?'down':(ready>0&&cons===0?'warn':'up'));
+  $('#n-al').className='node '+(flowing?'up':'down');
+  $('#atext').textContent=flowing?'consuming events':'offline';
+  $('#qtext').textContent=!q?'broker unreachable':(q.ready==null?'queue not created yet':`${ready} waiting \u00b7 ${cons} consumer${cons===1?'':'s'}`);
+  setHTML('#envs',Array.from({length:Math.min(ready,12)},()=>'<i></i>').join('')+(ready>12?`<b>+${ready-12}</b>`:''));
+  ['a1','a2'].forEach(a=>$('#'+a).className='arrow'+(sv.rabbitmq&&sv.request?' flowing':''));
+  $('#a3').className='arrow'+(flowing?' flowing':'');
+  $('#pipeNote').textContent=!sv.rabbitmq?'The broker is unreachable. Producers retry until it returns.'
+    :(ready>0&&cons===0?`Allocation is offline. ${ready} event${ready===1?' is':'s are'} retained in the durable queue and will be delivered when it recovers.`
+    :(flowing?'A consumer is attached: events flow straight through to the allocation engine.':'Waiting for the allocation consumer to attach.'));
+  renderCenters(); renderRequests(); renderEvents(); fillSelects();
+  document.querySelectorAll('.step').forEach(b=>b.classList.toggle('done',doneSteps.has(+b.dataset.step)));
+}
+
+function renderCenters(){
+  const committed={};
+  (S.recommendations||[]).forEach(r=>(r.approved_allocations||[]).forEach(a=>{ const k=a.supplier+'|'+r.item; committed[k]=(committed[k]||0)+a.quantity; }));
+  const html=(S.centers||[]).map(c=>{
+    const items=Object.entries(c.inventory||{});
+    const body=items.length?items.map(([item,v])=>{
+      const res=Math.min(committed[c.center_id+'|'+item]||0,v.shareable_quantity), free=v.shareable_quantity-res, tot=Math.max(v.quantity,1);
+      return `<div><b>${esc(item)}</b><div class="seg"><div class="free" style="width:${free/tot*100}%"></div><div class="res" style="width:${res/tot*100}%"></div><div class="priv" style="width:${(v.quantity-v.shareable_quantity)/tot*100}%"></div></div>
+      <div class="legend">stock <b>${v.quantity}</b> &middot; sharing <b>${v.shareable_quantity}</b> &middot; reserved <b>${res}</b> &middot; free <b>${free}</b></div></div>`;
+    }).join(''):'<div class="sub">No stock registered</div>';
+    return `<div class="center"><h3>${esc(c.name)}</h3><div class="sub">${esc(c.center_id)}</div>${body}</div>`;
+  }).join('')||'<div class="empty">No centers yet.</div>';
+  setHTML('#centers',html);
+}
+
+function renderRequests(){
+  const recs={}; (S.recommendations||[]).forEach(r=>recs[r.request_id]=r);
+  const order={pending:0,queued:1,approved:2,partial:2,rejected:2};
+  const rows=(S.requests||[]).map(r=>{ const rec=recs[r.request_id]; return {r,rec,st:rec?rec.status:'queued'}; })
+    .sort((a,b)=>(order[a.st]-order[b.st])||((b.rec?b.rec.score:0)-(a.rec?a.rec.score:0)));
+  let rank=0;
+  const html=rows.map(({r,rec,st})=>{
+    if(st==='pending') rank++;
+    const label={queued:'Waiting in queue',pending:'Awaiting supplier',approved:'Approved',partial:'Partially approved',rejected:'Rejected'}[st];
+    const alloc=rec?(rec.allocations.length?rec.allocations.map(a=>`${a.quantity} from ${esc(cname(a.supplier))}`).join(', '):'no shareable stock'):'<span class="sub">not yet processed</span>';
+    const recText=rec?`<b>${rec.recommended_quantity}</b> of ${rec.requested_quantity}<div class="sub">${alloc}</div>`:alloc;
+    let act='';
+    if(st==='pending'&&rec.recommended_quantity>0) act=`<div class="acts"><button class="ok" data-a="approve" data-id="${esc(r.request_id)}">Approve</button><button class="part" data-a="partial" data-id="${esc(r.request_id)}">Partial</button><button class="no" data-a="reject" data-id="${esc(r.request_id)}">Reject</button></div>`;
+    else if(rec&&rec.decision) act=`<div class="sub">${esc(rec.decision.operator)}<br>${time(rec.decision.timestamp)}${rec.status==='partial'?` &middot; ${rec.approved_allocations.reduce((s,a)=>s+a.quantity,0)} of ${rec.recommended_quantity}`:''}${rec.decision.reason?`<br>&ldquo;${esc(rec.decision.reason)}&rdquo;`:''}</div>`;
+    const score=rec?`<b>${rec.score}</b><div class="bar"><div style="width:${Math.min(100,rec.score/40*100)}%"></div></div>`:'<span class="sub">-</span>';
+    return `<tr><td><b>${esc(r.request_id)}</b>${st==='pending'?` <span class="sub">#${rank}</span>`:''}<div class="sub">${esc(cname(r.center_id))}</div></td>
+      <td>${r.quantity} &times; ${esc(r.item)}<div><span class="chip c-${r.urgency}">${r.urgency}</span></div></td><td>${score}</td><td>${recText}</td>
+      <td><span class="chip s-${st}">${label}</span></td><td>${act}</td></tr>`;
+  }).join('')||'<tr><td colspan="6" class="empty">No requests yet. Submit one above, or use the guided demo.</td></tr>';
+  setHTML('#rows',html);
+}
+
+function renderEvents(){
+  const text=e=>{ const d=e.data||{};
+    switch(e.type){
+      case 'request.created': return `${esc(cname(d.center_id))} requests <b>${d.quantity}</b> ${esc(d.item)} (${esc(d.urgency)})`;
+      case 'allocation.recommended': return `${esc(d.request_id)}: ${esc(cname(d.requester))} gets <b>${d.recommended_quantity}</b> of ${d.requested_quantity}`+(d.allocations&&d.allocations.length?` from ${d.allocations.map(a=>esc(cname(a.supplier))).join(', ')}`:'');
+      case 'request.approved': return `${esc(d.request_id)}: <b>${d.approved_quantity}</b> ${d.status==='partial'?'partially ':''}approved`;
+      case 'request.rejected': return `${esc(d.request_id)} rejected: ${esc(d.reason)}`;
+      case 'inventory.updated': return `${esc(cname(d.center_id))} ${esc(d.item)}: stock ${d.quantity}, sharing ${d.shareable_quantity}`;
+      default: return esc(JSON.stringify(d)); } };
+  const cls=t=>t.startsWith('request.created')?'t-request':t.startsWith('allocation')?'t-allocation':t.startsWith('inventory')?'t-inventory':t.endsWith('approved')?'t-approved':t.endsWith('rejected')?'t-rejected':'';
+  setHTML('#events',(S.events||[]).map(e=>`<div class="ev"><time>${time(e.timestamp)}</time><div><span class="tag ${cls(e.type)}">${esc(e.type)}</span>${text(e)}<div class="sub">${esc(e.actor)}</div></div></div>`).join('')||'<div class="empty">No events yet. Events appear here the moment they cross the broker.</div>');
+}
+
+function fillSelect(sel,ids,names){
+  const el=$(sel), sig=ids.join(',');
+  if(el.dataset.sig===sig) return;
+  const cur=el.value; el.dataset.sig=sig;
+  el.innerHTML=ids.map((id,i)=>`<option value="${esc(id)}">${esc(names[i])} (${esc(id)})</option>`).join('');
+  if(ids.includes(cur)) el.value=cur;
+}
+function fillSelects(){ const ids=(S.centers||[]).map(c=>c.center_id), names=(S.centers||[]).map(c=>c.name); fillSelect('#rqCenter',ids,names); fillSelect('#sCenter',ids,names); }
+
+// ---- actions ----
+function ask(title,label,type,value){ return new Promise(res=>{ const d=$('#dlg'), i=$('#dlgInput');
+  $('#dlgTitle').textContent=title; $('#dlgLabel').textContent=label; i.type=type; i.value=value||''; d.returnValue='';
+  d.onclose=()=>res(d.returnValue==='ok'?i.value:null); d.showModal(); i.focus(); }); }
+
+$('#rows').addEventListener('click',async e=>{
+  const b=e.target.closest('button[data-a]'); if(!b) return;
+  const id=b.dataset.id, rec=(S.recommendations||[]).find(r=>r.request_id===id); if(!rec) return;
+  const operator=((rec.allocations[0]||{}).supplier||'supplier')+'-operator-1';
+  let body={decision:b.dataset.a,operator};
+  if(b.dataset.a==='partial'){ const v=await ask('Partially approve '+id,`Quantity to approve (1 to ${rec.recommended_quantity})`,'number',Math.max(1,Math.floor(rec.recommended_quantity/2))); if(v===null) return; body.quantity=+v; }
+  if(b.dataset.a==='reject'){ const v=await ask('Reject '+id,'A reason is required and is recorded','text',''); if(v===null) return; body.reason=v; }
+  try{ await api('POST','/api/decision/'+encodeURIComponent(id),body); toast(id+': '+body.decision+' recorded'); poll(true); }catch(err){ toast(err.message,true); }
+});
+$('#pills').addEventListener('click',async e=>{
+  const b=e.target.closest('button[data-svc]'); if(!b) return;
+  try{ await api('POST',`/api/service/${b.dataset.svc}/${b.dataset.act}`); toast(`${b.dataset.svc}-service: ${b.dataset.act} sent`); }catch(err){ toast(err.message,true); }
+});
+$('#reqForm').addEventListener('submit',async e=>{ e.preventDefault();
+  try{ const r=await api('POST','/api/requests',{center_id:$('#rqCenter').value,item:$('#rqItem').value,quantity:+$('#rqQty').value,urgency:$('#rqUrg').value}); toast(r.request_id+' submitted'); poll(true); }catch(err){ toast(err.message,true); } });
+$('#centerForm').addEventListener('submit',async e=>{ e.preventDefault();
+  try{ const body={name:$('#cName').value}; if($('#cId').value.trim()) body.center_id=$('#cId').value.trim(); await api('POST','/api/centers',body); toast('Center registered'); e.target.reset(); poll(true); }catch(err){ toast(err.message,true); } });
+$('#stockForm').addEventListener('submit',async e=>{ e.preventDefault();
+  try{ await api('PUT',`/api/centers/${encodeURIComponent($('#sCenter').value)}/inventory`,{item:$('#sItem').value,quantity:+$('#sQty').value,shareable_quantity:+$('#sShare').value}); toast('Inventory updated'); poll(true); }catch(err){ toast(err.message,true); } });
+
+const captions={0:'Click the steps in order. Each one acts on the real running containers.',
+ 1:'allocation-service is stopped. The rest of the network keeps running. Watch its tile go red.',
+ 2:'Center B (critical, 400) and Center C (normal, 300) both asked. request-service accepted them even though allocation is down.',
+ 3:'The pipeline shows the events retained in the durable queue with 0 consumers. Nothing was lost.',
+ 4:'allocation-service is back, drained the queue and ranked the requests: critical B gets 400, C gets the remaining 100.'};
+const cap=n=>$('#caption').textContent=captions[n];
+async function step(n){
+  try{
+    if(n===1){ if(S.can_control) await api('POST','/api/service/allocation/stop'); else toast('Run: docker compose stop allocation-service'); }
+    if(n===2){ await api('POST','/api/requests',{center_id:'center-b',item:'food_packets',quantity:400,urgency:'critical'});
+               await api('POST','/api/requests',{center_id:'center-c',item:'food_packets',quantity:300,urgency:'normal'}); }
+    if(n===3){ const p=$('#pipe'); p.scrollIntoView({behavior:'smooth',block:'center'}); p.classList.remove('flash'); void p.offsetWidth; p.classList.add('flash'); }
+    if(n===4){ if(S.can_control) await api('POST','/api/service/allocation/start'); else toast('Run: docker compose start allocation-service'); }
+    doneSteps.add(n); cap(n); poll(true);
+  }catch(err){ toast(err.message,true); }
+}
+document.querySelectorAll('.step').forEach(b=>b.onclick=()=>step(+b.dataset.step));
+$('#resetBtn').onclick=async()=>{
+  if(!confirm('Reset the demo? This clears all requests and restarts the three services.')) return;
+  toast('Resetting... (about 10 seconds)');
+  try{ await api('POST','/api/reset'); doneSteps.clear(); cap(0); toast('Demo reset'); }catch(err){ toast(err.message,true); } };
+
+let timer=null;
+async function poll(now){
+  clearTimeout(timer);
+  try{ S=await api('GET','/api/state'); $('#offline').hidden=true; render(); }catch(e){ $('#offline').hidden=false; }
+  timer=setTimeout(poll,1500);
+}
+cap(0); poll();
+</script>
+</body>
+</html>
